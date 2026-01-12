@@ -1,2 +1,17 @@
-/.venv
+# venv
+.venv/
 
+# env files
+.env
+
+# python bytecode
+*.pyc
+*.*.pyc
+
+# __pycache__
+__pycache__/
+**/__pycache__/
+
+*.pyc
+
+*.db
