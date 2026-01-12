@@ -82,7 +82,6 @@ async def logout(request: Request):
     next_path = request.headers.get("referer") or "/"
     try:
         parsed = urlparse(next_path)
-        # сохраняем путь + query (если был)
         next_path = parsed.path or "/"
         if parsed.query:
             next_path += "?" + parsed.query
