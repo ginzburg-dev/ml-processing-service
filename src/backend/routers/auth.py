@@ -2,12 +2,13 @@ from urllib.parse import unquote, urlparse, quote
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from backend.app.config import MLServiceConfig
-from backend.app.database import UserDatabase
+from backend.config import MLServiceConfig
+from backend.database import UserDatabase
 
 router = APIRouter(tags=["auth"])
 config = MLServiceConfig(dotenv=True)
 database = UserDatabase(config.db_path)
+
 
 def safe_next(next_: str) -> str:
     if not next_:
@@ -16,6 +17,7 @@ def safe_next(next_: str) -> str:
     if n.startswith("/") and not n.startswith("//"):
         return n
     return "/"
+
 
 def render_login(error: str, next_: str) -> HTMLResponse:
     html = f"""
@@ -53,11 +55,13 @@ def render_login(error: str, next_: str) -> HTMLResponse:
 """
     return HTMLResponse(html)
 
+
 @router.get("/login")
 async def login_page(request: Request, next: str = "/"):
     if request.session.get("user_id"):
         return RedirectResponse(safe_next(next), status_code=302)
     return render_login("", next)
+
 
 @router.post("/login")
 async def login_submit(

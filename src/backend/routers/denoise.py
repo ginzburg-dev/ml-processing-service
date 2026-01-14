@@ -1,23 +1,25 @@
 import io
 import zipfile
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, UploadFile, Query, HTTPException, Request
+from fastapi import APIRouter, File, UploadFile, Query, HTTPException, Request
 from fastapi.responses import Response, HTMLResponse
 from PIL import Image
 
-from backend.app.login import require_login
-from backend.app.services.denoise import denoise_image
+from backend.auth.login import require_login
+from backend.services.denoise import denoise_image
 
 router = APIRouter(prefix="/denoise", tags=["denoise"])
 
 
 @router.post("/image")
 async def denoise_single(
+    request: Request,
     file: UploadFile = File(...),
     strength: float = Query(1.0, ge=0.0, le=5.0),
 ) -> Response:
-    
+    guard = require_login(request, "/denoise")
+    if guard:
+        return guard
     data = await file.read()
     img = Image.open(io.BytesIO(data)).convert("RGB")
     out = denoise_image(img, strength=strength)
@@ -50,7 +52,9 @@ async def denoise_sequence_zip(
             try:
                 img = Image.open(io.BytesIO(data)).convert("RGB")
             except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Failed to read image {f.filename}: {e}")
+                raise HTTPException(
+                    status_code=400, detail=f"Failed to read image {f.filename}: {e}"
+                )
 
             out = denoise_image(img, strength=strength)
             out_buf = io.BytesIO()
@@ -64,13 +68,14 @@ async def denoise_sequence_zip(
     headers = {"Content-Disposition": 'attachment; filename="denoised_sequence.zip"'}
     return Response(zip_buf.getvalue(), media_type="application/zip", headers=headers)
 
-@router.post("/files/")
-async def create_files(files: Annotated[list[bytes], File()]):
-    return {"file_sizes": [len(file) for file in files]}
 
-@router.post("/uploadfiles/")
-async def create_upload_files(files: Annotated[list[UploadFile], File(...)]):
-    return {"filenames": [f.filename for f in files]}
+# @router.post("/files/")
+# async def create_files(files: Annotated[list[bytes], File()]):
+#     return {"file_sizes": [len(file) for file in files]}
+#
+# @router.post("/uploadfiles/")
+# async def create_upload_files(files: Annotated[list[UploadFile], File(...)]):
+#     return {"filenames": [f.filename for f in files]}
 
 
 @router.get("/")
@@ -78,7 +83,7 @@ async def denoise_page(request: Request):
     guard = require_login(request, "/denoise")
     if guard:
         return guard
-    
+
     content = """
 <!doctype html>
 <html>
@@ -103,8 +108,6 @@ async def denoise_page(request: Request):
   </div>
 
   <div class="row">
-    <label class="muted">API Key (X-API-Key):</label>
-    <input id="apikey" type="text" placeholder="PROCESS" />
     <label class="muted">Strength:</label>
     <input id="strength" type="number" min="0" max="5" step="0.1" value="1.0" />
   </div>
@@ -121,7 +124,6 @@ async def denoise_page(request: Request):
   <script>
     window.addEventListener("DOMContentLoaded", () => {
       const input = document.getElementById("folder");
-      const apiKeyEl = document.getElementById("apikey");
       const strengthEl = document.getElementById("strength");
       const logEl = document.getElementById("log");
       const scanBtn = document.getElementById("scan");
@@ -185,7 +187,6 @@ async def denoise_page(request: Request):
           const pngs = collectPNGs(files);
           if (!pngs.length) return log("No PNG files found.");
 
-          const apiKey = (apiKeyEl.value || "").trim();
           const strength = parseFloat(strengthEl.value || "1.0");
 
           log(`PNG files: ${pngs.length}`);
@@ -200,7 +201,6 @@ async def denoise_page(request: Request):
 
           const url = `/denoise/sequence.zip?strength=${encodeURIComponent(strength)}`;
           const headers = {};
-          if (apiKey) headers["key"] = apiKey;
 
           const r = await fetch(url, { method: "POST", headers, body: form });
 

@@ -1,0 +1,40 @@
+[project]
+name = "ml-processing-service"
+version = "0.1.0"
+description = "Service to process images and sequences"
+authors = [
+    { name="Dmitrii.Ginzburg", email="ginzburgdd@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "argon2-cffi>=25.1.0",
+    "fastapi>=0.128.0",
+    "itsdangerous>=2.2.0",
+    "pillow>=12.1.0",
+    "pytest>=9.0.2",
+    "python-multipart>=0.0.21",
+    "structlog>=25.5.0",
+    "uvicorn>=0.40.0",
+]
+
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.14.11",
+]
+
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/backend"]
+
+
+[project.scripts]
+mlp-service = "backend.main:run_app"
+manage-users = "backend.cli.manage_users:manage_users"

@@ -1,16 +1,21 @@
-# venv
 .venv/
 
-# env files
 .env
 
-# python bytecode
 *.pyc
 *.*.pyc
 
-# __pycache__
+.python-version
+*.egg-info/
+.ruff_cache/
+.vscode/
+
+.pytest_cache/
+
 __pycache__/
 **/__pycache__/
+
+tests/files
 
 *.pyc
 

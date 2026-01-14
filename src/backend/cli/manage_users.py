@@ -1,20 +1,15 @@
-
-import sys
 import argparse
 import getpass
-from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parents[2]))
-
-from backend.app.database import UserDatabase
-from backend.app.config import MLServiceConfig
+from backend.database import UserDatabase
+from backend.config import MLServiceConfig
 
 import structlog
 
 LOGGER = structlog.get_logger()
 
 
-def main():
+def manage_users():
     config = MLServiceConfig(dotenv=True)
     database = UserDatabase(config.db_path)
 
@@ -67,5 +62,6 @@ def main():
     elif args.cmd == "delete":
         database.delete_user(args.user_id)
 
+
 if __name__ == "__main__":
-    main()
+    manage_users()
